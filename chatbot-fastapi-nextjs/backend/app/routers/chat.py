@@ -22,7 +22,17 @@ async def chat(body: Chat, user: User = Depends(current_active_user)):
             )
 
             for chunk in llm_stream:
-                 yield json.dumps(chunk.to_dict()) + "\n"
+                # Convert the chunk to a dictionary format
+                chunk_dict = {
+                    "id": getattr(chunk, 'id', None),
+                    "object": "chat.completion.chunk",
+                    "choices": [{
+                        "index": 0,
+                        "delta": {"content": chunk.choices[0].delta.content if chunk.choices and chunk.choices[0].delta else ""},
+                        "finish_reason": chunk.choices[0].finish_reason if chunk.choices else None
+                    }]
+                }
+                yield json.dumps(chunk_dict) + "\n"
 
         return StreamingResponse(generate(), media_type="text/event-stream")
 
